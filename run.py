@@ -2,6 +2,7 @@ import math
 import pickle
 import os.path
 import unicodedata
+from time import sleep
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -16,6 +17,8 @@ DEST_SPREADSHEET_ID = '1Rs0SCa8ZhbiduR_Kbx32xvc8Z38M_wnrOTQNiqXPsso'
 SAMPLE_RANGE_NAME = 'A2:B'
 
 PRICE_MULTIPLIER = 1.02
+
+TIME_TO_SLEEP = 300
 
 
 def get_service():
@@ -201,6 +204,9 @@ def run():
     # read data
     data = read_base_file()
 
+    if not data:
+        return
+
     # change prices
     new_data = parse_list(data)
 
@@ -223,4 +229,7 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    while True:
+        run()
+        print('Waiting {} seconds before next run'.format(TIME_TO_SLEEP))
+        sleep(TIME_TO_SLEEP)
