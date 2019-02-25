@@ -183,8 +183,9 @@ def divide_by_brands(new_data):
             data_divided_by_brands[brand] = []
 
         if brand not in all_s:
-            print('creating sheet')
-            create_sheet(data[0].split()[0])
+            sheet_title = data[0].split()[0]
+            print('creating sheet {}'.format(sheet_title))
+            create_sheet(sheet_title)
             sheets = get_sheets(DEST_SPREADSHEET_ID)
             all_s = [name.get('properties').get('title').lower() for name in sheets]
 
@@ -213,9 +214,9 @@ def run():
     # clear data in corresponding brand sheet and write new data
     range_suffix = 'A2:B'
     for s in sheets:
-        print('clearing sheet')
-        clear_sheet(s.get('properties').get('sheetId'))
         page_title = s.get('properties').get('title')
+        print('clearing sheet {}'.format(page_title))
+        clear_sheet(s.get('properties').get('sheetId'))
         range = '{}!{}'.format(page_title, range_suffix)
         print('updating data')
         test_write(range, data_divided_by_brands.get(page_title.lower()))
