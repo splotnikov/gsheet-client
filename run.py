@@ -19,7 +19,7 @@ SAMPLE_RANGE_NAME = 'A2:B'
 
 PRICE_MULTIPLIER = 1.02
 
-TIME_TO_SLEEP = 300
+TIME_TO_SLEEP = 10
 TIME_TO_SLEEP_AFTER_ERROR = 30
 
 HEADER = ['Наименование', 'Цена']
@@ -243,22 +243,20 @@ def run_update_cycle():
 
 def run():
     try:
-        while True:
-            print('updating')
-            res = run_update_cycle()
+        print('updating')
+        res = run_update_cycle()
 
-            if not res:
-                raise Exception('src file was empty')
+        if not res:
+            raise Exception('src file was empty')
 
-            logger.info('Waiting {} seconds before next run'.format(TIME_TO_SLEEP))
-            print('waiting {} seconds'.format(TIME_TO_SLEEP))
-            sleep(TIME_TO_SLEEP)
+        logger.info('Waiting {} seconds before next run'.format(TIME_TO_SLEEP))
+        print('waiting {} seconds'.format(TIME_TO_SLEEP))
+        sleep(TIME_TO_SLEEP)
     except Exception as e:
         logger.error('oops! something went wrong\n{}'.format(e))
         logger.info('Waiting {} seconds before next run'.format(TIME_TO_SLEEP_AFTER_ERROR))
         print('error happened, waiting {} seconds'.format(TIME_TO_SLEEP_AFTER_ERROR))
         sleep(TIME_TO_SLEEP_AFTER_ERROR)
-        run()
 
 
 if __name__ == '__main__':
@@ -276,4 +274,5 @@ if __name__ == '__main__':
 
     logger = logging.getLogger('gsheet-client')
 
-    run()
+    while True:
+        run()
