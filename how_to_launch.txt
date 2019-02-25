@@ -1,0 +1,7 @@
+# open git-bash and enter next commands:
+
+cd /d/just_opt/gsheet-client
+../Scripts/activate
+python run.py
+
+# to stop the script press Ctrl + C
