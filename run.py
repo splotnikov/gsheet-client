@@ -1,3 +1,4 @@
+import logging
 import math
 import pickle
 import os.path
@@ -19,6 +20,12 @@ SAMPLE_RANGE_NAME = 'A2:B'
 PRICE_MULTIPLIER = 1.02
 
 TIME_TO_SLEEP = 300
+TIME_TO_SLEEP_AFTER_ERROR = 30
+
+HEADER = ['Наименование', 'Цена']
+
+
+# logger = logging.getLogger(__name__)
 
 
 def get_service():
@@ -59,7 +66,7 @@ def get_sheets(spreadsheet_id):
 
 
 def read_base_file():
-    print('reading src file')
+    logger.info('reading src file')
 
     service = get_service()
     range = 'A2:B'
@@ -82,13 +89,13 @@ def get_new_price(old_price):
 
 
 def parse_list(data):
-    print('updating prices')
+    logger.info('updating prices')
     for d in data:
         d[1] = get_new_price(d[1])
     return data
 
 
-def test_write(range, values):
+def write_to_sheet(range, values):
     service = get_service()
 
     body = {
@@ -177,7 +184,7 @@ def divide_by_brands(new_data):
     sheets = get_sheets(DEST_SPREADSHEET_ID)
     all_s = [name.get('properties').get('title').lower() for name in sheets]
 
-    print('parsing brands')
+    logger.info('parsing brands')
 
     for data in new_data:
         brand = data[0].split()[0].lower()
@@ -187,7 +194,7 @@ def divide_by_brands(new_data):
 
         if brand not in all_s:
             sheet_title = data[0].split()[0]
-            print('creating sheet {}'.format(sheet_title))
+            logger.info('creating sheet {}'.format(sheet_title))
             create_sheet(sheet_title)
             sheets = get_sheets(DEST_SPREADSHEET_ID)
             all_s = [name.get('properties').get('title').lower() for name in sheets]
@@ -197,7 +204,7 @@ def divide_by_brands(new_data):
     return data_divided_by_brands
 
 
-def run():
+def run_update_cycle():
     # copy src sheet to dest file
     # delete old list, move new to the 1st place
 
@@ -205,7 +212,9 @@ def run():
     data = read_base_file()
 
     if not data:
-        return
+        print('empty src file')
+        logger.info('src file was empty')
+        return False
 
     # change prices
     new_data = parse_list(data)
@@ -218,18 +227,47 @@ def run():
     sheets = get_sheets(DEST_SPREADSHEET_ID)
 
     # clear data in corresponding brand sheet and write new data
-    range_suffix = 'A2:B'
+    range_suffix = 'A1:B'
     for s in sheets:
         page_title = s.get('properties').get('title')
-        print('clearing sheet {}'.format(page_title))
+        logger.info('clearing sheet {}'.format(page_title))
         clear_sheet(s.get('properties').get('sheetId'))
         range = '{}!{}'.format(page_title, range_suffix)
-        print('updating data')
-        test_write(range, data_divided_by_brands.get(page_title.lower()))
+        logger.info('updating data')
+        to_write = data_divided_by_brands.get(page_title.lower())
+        if to_write:
+            to_write.insert(0, HEADER)
+            write_to_sheet(range, to_write)
+    return True
+
+
+def run():
+    try:
+        while True:
+            print('updating')
+            res = run_update_cycle()
+
+            if not res:
+                raise Exception('src file was empty')
+
+            logger.info('Waiting {} seconds before next run'.format(TIME_TO_SLEEP))
+            print('waiting {} seconds'.format(TIME_TO_SLEEP))
+            sleep(TIME_TO_SLEEP)
+    except Exception as e:
+        logger.error('oops! something went wrong\n{}'.format(e))
+        logger.info('Waiting {} seconds before next run'.format(TIME_TO_SLEEP_AFTER_ERROR))
+        print('error happened, waiting {} seconds'.format(TIME_TO_SLEEP_AFTER_ERROR))
+        sleep(TIME_TO_SLEEP_AFTER_ERROR)
+        run()
 
 
 if __name__ == '__main__':
-    while True:
-        run()
-        print('Waiting {} seconds before next run'.format(TIME_TO_SLEEP))
-        sleep(TIME_TO_SLEEP)
+    print('starting')
+    logging.basicConfig(filename='log',
+                        format='%(asctime)s  - %(name)s - %(levelname)s - %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.INFO)
+
+    logger = logging.getLogger('gsheet-client')
+
+    run()
