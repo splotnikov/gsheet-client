@@ -23,7 +23,7 @@ TIME_TO_SLEEP = 300
 TIME_TO_SLEEP_AFTER_ERROR = 30
 
 HEADER = ['Наименование', 'Цена']
-
+LOG_FILE = 'log'
 
 # logger = logging.getLogger(__name__)
 
@@ -262,8 +262,14 @@ def run():
 
 
 if __name__ == '__main__':
+
+    try:
+        os.remove(LOG_FILE)
+    except OSError:
+        pass
+
     print('starting')
-    logging.basicConfig(filename='log',
+    logging.basicConfig(filename=LOG_FILE,
                         format='%(asctime)s  - %(name)s - %(levelname)s - %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.INFO)
